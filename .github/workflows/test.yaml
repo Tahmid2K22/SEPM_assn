@@ -1,0 +1,37 @@
+name: Automated Testing
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # Postgres so the Spring context and tests have a database
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: sepm_test
+          POSTGRES_USER: uni
+          POSTGRES_PASSWORD: uni
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Run tests
+        run: mvn test
+        env:
+          # Tests need a reachable database (same credentials as compose.yaml)
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/sepm_test
+          SPRING_DATASOURCE_USERNAME: uni
+          SPRING_DATASOURCE_PASSWORD: uni
