@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>University Management System - Login</title>
+  <style>
+    body { font-family: sans-serif; background: #f4f5f7; display: grid; place-items: center; height: 100vh; margin: 0; }
+    .card { background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.15); width: 300px; }
+    h1 { font-size: 1.2rem; margin-top: 0; }
+    label { font-size: .8rem; }
+    input { width: 100%; box-sizing: border-box; padding: .5rem; margin: .35rem 0 1rem; }
+    button { width: 100%; padding: .55rem; background: #2456d6; color: #fff; border: 0; border-radius: 4px; cursor: pointer; }
+    .msg { margin-top: 1rem; font-size: .85rem; }
+    .msg.error { color: #b42318; }
+    .msg.info { color: #027487; }
+    code { background: #f0f0f0; padding: 0 .25rem; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>University Management System</h1>
+    <form action="/login" method="post">
+      <label>Email</label>
+      <input name="username" type="text" required autofocus placeholder="admin@uni.edu">
+      <label>Password</label>
+      <input name="password" type="password" required>
+      <button type="submit">Sign in</button>
+    </form>
+    <div id="banner" class="msg"></div>
+  </div>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const banner = document.getElementById("banner");
+    if (params.has("error")) { banner.textContent = "Invalid email or password."; banner.classList.add("error"); }
+    if (params.has("logout")) banner.textContent = "You have been logged out.";
+  </script>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>University Management System</title>
+  <style>
+    body { font-family: sans-serif; background: #f4f5f7; margin: 0; }
+    header { background: #2456d6; color: #fff; padding: .8rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+    header button { background: #fff; color: #2456d6; border: 0; border-radius: 4px; padding: .4rem .9rem; cursor: pointer; }
+    main { max-width: 860px; margin: 1.5rem auto; padding: 0 1rem; }
+    nav button { margin-right: .5rem; padding: .45rem 1rem; border: 1px solid #ccc; background: #fff; border-radius: 4px; cursor: pointer; }
+    nav button.active { background: #2456d6; border-color: #2456d6; color: #fff; }
+    nav button:disabled { opacity: .4; cursor: not-allowed; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: #fff; }
+    th, td { border: 1px solid #e3e3e3; padding: .5rem .6rem; text-align: left; font-size: .9rem; }
+    td button { margin-right: .3rem; padding: .25rem .6rem; cursor: pointer; }
+    .del { color: #b42318; }
+    form#editor { background: #fff; border: 1px solid #e3e3e3; border-radius: 6px; padding: 1rem; margin-top: 1rem; }
+    form#editor label { display: block; font-size: .8rem; margin-top: .5rem; }
+    form#editor input { width: 100%; box-sizing: border-box; padding: .45rem; margin-top: .2rem; }
+    form#editor button[type=submit] { margin-top: .8rem; padding: .5rem 1.2rem; background: #2456d6; color: #fff; border: 0; border-radius: 4px; cursor: pointer; }
+    #banner { font-size: .9rem; margin-top: 1rem; min-height: 1.2em; }
+    #banner.error { color: #b42318; }
+    #banner.ok { color: #027487; }
+    .hint { color: #666; font-size: .85rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 style="font-size:1.05rem;margin:0">University Management System</h1>
+    <span style="font-size:.9rem">
+      <span id="who"></span>
+      <form id="logout" action="/logout" method="post" style="display:inline">
+        <button type="submit">Log out</button>
+      </form>
+    </span>
+  </header>
+  <main>
+    <nav id="tabs"></nav>
+    <p class="hint" id="hint"></p>
+    <form id="editor" hidden>
+      <input type="hidden" id="f-id">
+      <label>Name <input id="f-name" required></label>
+      <label>Email <input id="f-email" type="email" required></label>
+      <label id="f-extra-label"></label>
+      <label>Password (leave empty when editing to keep) <input id="f-password" type="password"></label>
+      <button type="submit">Save</button>
+      <button type="button" id="cancel">Cancel</button>
+    </form>
+     <table id="list"></table>
+    <div id="banner"></div>
+  </main>
+
+  <script>
+    const RESOURCE = {
+      admins:   { title: "Admins",   roles: ["ADMIN"],           extra: null,     extraLabel: "" },
+      teachers: { title: "Teachers", roles: ["ADMIN", "TEACHER"], extra: "subject", extraLabel: "Subject" },
+      students: { title: "Students", roles: ["ADMIN", "STUDENT"], extra: "course",  extraLabel: "Course" },
+    };
+    let role = null;
+    let resource = null;
+
+    const banner = document.getElementById("banner");
+    const list = document.getElementById("list");
+    const editor = document.getElementById("editor");
+
+    function setBanner(text, cls) {
+      banner.textContent = text;
+      banner.className = cls || "";
+    }
+
+    (async () => {
+      const res = await fetch("/api/me");
+      if (!res.ok) { location.href = "/login.html"; return; }
+      const me = await res.json();
+      role = me.role;
+      document.getElementById("who").textContent = `${me.email} (${me.role})`;
+      buildTabs();
+      open(firstPermitted());
+    })();
+
+    function firstPermitted() {
+      return Object.keys(RESOURCE).find(r => RESOURCE[r].roles.includes(role));
+    }
+
+    function buildTabs() {
+      const nav = document.getElementById("tabs");
+      nav.innerHTML = "";
+
+      for (const [key, cfg] of Object.entries(RESOURCE)) {
+        const b = document.createElement("button");
+        b.textContent = cfg.title;
+        b.disabled = !cfg.roles.includes(role);
+        if (cfg.roles.includes(role)) b.onclick = () => open(key);
+        nav.appendChild(b);
+      }
+
+      const addBtn = document.createElement("button");
+      addBtn.textContent = "+ Add";
+      addBtn.onclick = () => window.showNew();
+      addBtn.disabled = false;
+      nav.appendChild(addBtn);
+    }
+
+    function open(key) {
+      resource = key;
+      document.querySelectorAll("nav button").forEach((b, i) =>
+        b.classList.toggle("active", Object.keys(RESOURCE)[i] === key));
+      const extra = RESOURCE[key].extra;
+      document.getElementById("f-extra-label").hidden = extra === null;
+      document.getElementById("f-extra-label").innerHTML =
+        extra === null ? "" : `${RESOURCE[key].extraLabel} <input id="f-extra">`;
+      document.getElementById("hint").textContent =
+        `Managing ${RESOURCE[key].title} - role ${role}`;
+      editor.hidden = true;
+      load();
+    }
+
+    async function load() {
+      const res = await fetch(`/api/${resource}`);
+      if (res.status === 401) { location.href = "/login.html"; return; }
+      if (!res.ok) { setBanner(`GET /api/${resource} -> ${res.status}`, "error"); return; }
+      const rows = await res.json();
+      const extra = RESOURCE[resource].extra;
+      list.innerHTML = `<tr><th>ID</th><th>Name</th><th>Email</th>` +
+        (extra ? `<th>${RESOURCE[resource].extraLabel}</th>` : "") +
+        `<th>Actions</th></tr>`;
+      for (const row of rows) {
+        const tr = list.insertRow();
+        tr.innerHTML = `<td>${row.id}</td><td>${esc(row.name)}</td><td>${esc(row.email)}</td>` +
+          (extra ? `<td>${esc(row[extra] ?? "")}</td>` : "") +
+          `<td><button onclick="showEdit(${row.id})">Edit</button>` +
+          `<button class="del" onclick="del(${row.id})">Delete</button></td>`;
+      }
+      if (rows.length === 0) setBanner(`No ${RESOURCE[resource].title.toLowerCase()} yet - use the form below.`, "ok");
+      else setBanner("");
+    }
+
+    const esc = s => String(s).replaceAll("&", "&amp;").replaceAll("<", "&lt;");
+
+    window.showNew = async () => {
+      editor.reset();
+      document.getElementById("f-id").value = "";
+      document.getElementById("f-password").value = "";
+      editor.hidden = false;
+    };
+
+    window.showEdit = async (id) => {
+      const res = await fetch(`/api/${resource}/${id}`);
+      if (res.status === 401) { location.href = "/login.html"; return; }
+      if (!res.ok) { setBanner(`GET /${resource}/${id} -> ${res.status}`, "error"); return; }
+      const row = await res.json();
+      document.getElementById("f-id").value = row.id;
+      document.getElementById("f-name").value = row.name;
+      document.getElementById("f-email").value = row.email;
+      const extra = RESOURCE[resource].extra;
+      if (extra) document.getElementById("f-extra").value = row[extra] ?? "";
+      document.getElementById("f-password").value = "";
+      editor.hidden = false;
+    };
+
+    editor.onsubmit = async (e) => {
+      e.preventDefault();
+      const id = document.getElementById("f-id").value;
+      const extra = RESOURCE[resource].extra;
+      const body = {
+        name: document.getElementById("f-name").value,
+        email: document.getElementById("f-email").value,
+        password: document.getElementById("f-password").value,
+      };
+      if (extra) body[extra] = document.getElementById("f-extra").value;
+      const res = await fetch(id ? `/api/${resource}/${id}` : `/api/${resource}`, {
+        method: id ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (res.status === 401) { location.href = "/login.html"; return; }
+      if (!res.ok) { setBanner(`Save failed: HTTP ${res.status}`, "error"); return; }
+      setBanner(id ? "Updated." : "Created.", "ok");
+      editor.hidden = true;
+      load();
+    };
+
+    document.getElementById("cancel").onclick = () => (editor.hidden = true);
+
+    window.del = async (id) => {
+      const res = await fetch(`/api/${resource}/${id}`, { method: "DELETE" });
+      if (res.status === 401) { location.href = "/login.html"; return; }
+      if (res.status === 403) { setBanner("Forbidden: your role cannot delete in this section.", "error"); return; }
+      if (!res.ok) { setBanner(`Delete failed: HTTP ${res.status}`, "error"); return; }
+      setBanner("Deleted.", "ok");
+      load();
+    };
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+spring:
+
+  application:
+    name: SEPM_assn
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/university}
+    username: ${DB_USER:uni}
+    password: ${DB_PASS:uni}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+server:
+  port: ${PORT:8080}
