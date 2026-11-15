@@ -25,9 +25,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * Plain unit tests (no database): repository and password encoder are mocked.
- */
+
 @ExtendWith(MockitoExtension.class)
 class StudentServiceTest {
 
@@ -49,8 +47,8 @@ class StudentServiceTest {
     private Student storedStudent() {
         Student student = new Student();
         student.setId(1L);
-        student.setName("Carol Student");
-        student.setEmail("student@uni.edu");
+        student.setName("Tahmid Chowdhury");
+        student.setEmail("tahmid@stud.kuet.ac.bd");
         student.setPassword(STORED_HASH);
         student.setCourse("Software Engineering");
         return student;
@@ -63,8 +61,8 @@ class StudentServiceTest {
         List<StudentDTO> result = studentService.getAllStudents();
 
         assertEquals(1, result.size());
-        assertEquals("Carol Student", result.get(0).getName());
-        assertEquals("student@uni.edu", result.get(0).getEmail());
+        assertEquals("Tahmid Chowdhury", result.get(0).getName());
+        assertEquals("tahmid@stud.kuet.ac.bd", result.get(0).getEmail());
         assertNull(result.get(0).getPassword(), "BCrypt hash must never leave the service layer");
     }
 
@@ -96,7 +94,7 @@ class StudentServiceTest {
 
         StudentDTO found = studentService.getStudentById(1L).orElseThrow();
 
-        assertEquals("Carol Student", found.getName());
+        assertEquals("Tahmid Chowdhury", found.getName());
         assertEquals("Software Engineering", found.getCourse());
         assertNull(found.getPassword(), "hash must not be exposed on read either");
 

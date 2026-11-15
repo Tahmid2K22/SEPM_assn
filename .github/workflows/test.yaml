@@ -4,7 +4,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    # Postgres so the Spring context and tests have a database
     services:
       postgres:
         image: postgres:16
@@ -31,7 +30,6 @@ jobs:
       - name: Run tests
         run: mvn test
         env:
-          # Tests need a reachable database (same credentials as compose.yaml)
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/sepm_test
           SPRING_DATASOURCE_USERNAME: uni
           SPRING_DATASOURCE_PASSWORD: uni

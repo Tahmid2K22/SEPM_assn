@@ -62,7 +62,7 @@ docker compose exec postgres psql -U uni -d university
 ```sql
 INSERT INTO admins   (name, email, password)                      VALUES ('Alice Admin','admin@uni.edu',  '$2a$10$Js/Z.y0Yn6VGEV32/mJnXeFjozbQVgzdK3DIht2CNdIdXbXmPwCLS');
 INSERT INTO teachers (name, email, password, subject)             VALUES ('Bob Teacher','teacher@uni.edu','$2a$10$uY4TSIAL9V3DoeDbgee.meAFJE3YAlXZy8kaRwTFVfnKpiyrlcEey','Software Engineering');
-INSERT INTO students (name, email, password, course)              VALUES ('Carol Student','student@uni.edu','$2a$10$NQlFSUfBMNAVPMaUKrMcFe64rhmt4h8o/E2RJyNEjV3y7CSgg0hkq','Software Engineering');
+INSERT INTO students (name, email, password, course)              VALUES ('Tahmid Chowdhury','tahmid@stud.kuet.ac.bd','$2a$10$NQlFSUfBMNAVPMaUKrMcFe64rhmt4h8o/E2RJyNEjV3y7CSgg0hkq','Software Engineering');
 ```
 
 Passwords are BCrypt (`admin123`, `teacher123`, `student123`). New accounts can
